@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getStoredUser, logout } from '../auth'
 import { SAMPLE_MODULE } from '../data/sampleModule'
+import { DATA_STRUCTURES_OUTLINE } from '../data/courseOutline'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
 
 const TREND_POINTS = [40, 55, 45, 65, 58, 72] // Jan–Jun approximate values for SVG
 const COURSES = [
+  { id: 'data-structures', title: 'Data Structures & Algorithms', difficulty: 'INTERMEDIATE', difficultyClass: 'orange', description: 'Linked lists, trees, heaps, sets, queues, and AVL trees.', duration: '18h', image: 'data', courseOutline: DATA_STRUCTURES_OUTLINE },
   { id: '1', title: 'Advanced Python', difficulty: 'INTERMEDIATE', difficultyClass: 'orange', description: 'Master decorators, generators, and async programming.', duration: '12h 45m', image: 'python' },
   { id: '2', title: 'UI/UX Design', difficulty: 'BEGINNER', difficultyClass: 'green', description: 'Learn design principles and Figma from scratch.', duration: '8h 20m', image: 'design' },
   { id: '3', title: 'Data Science Fundamentals', difficulty: 'INTERMEDIATE', difficultyClass: 'orange', description: 'Statistics, Python, and visualization basics.', duration: '15h 10m', image: 'data' },
@@ -38,7 +40,16 @@ export default function Dashboard() {
 
   const handleNav = (id: string) => setActiveNav(id)
 
-  const openModule = () => {
+  const openModule = (course?: (typeof COURSES)[0]) => {
+    if (course && 'courseOutline' in course && course.courseOutline) {
+      const firstModuleId = course.courseOutline.sections[0]?.modules[0]?.id
+      if (firstModuleId) {
+        navigate(`/module/${firstModuleId}`, {
+          state: { courseOutline: course.courseOutline, module: SAMPLE_MODULE },
+        })
+        return
+      }
+    }
     navigate(`/module/${SAMPLE_MODULE.module_id}`, { state: { module: SAMPLE_MODULE } })
   }
 
@@ -193,7 +204,7 @@ export default function Dashboard() {
                   <div className="dashboard-progress-fill" style={{ width: '65%' }} />
                 </div>
               </div>
-              <button type="button" className="dashboard-btn-resume" onClick={openModule}>
+              <button type="button" className="dashboard-btn-resume" onClick={() => openModule()}>
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z" />
                 </svg>
@@ -208,31 +219,41 @@ export default function Dashboard() {
               <button type="button" className="dashboard-link">View All Library</button>
             </div>
             <div className="dashboard-courses-grid">
-              {COURSES.map((course) => (
-                <div
-                  key={course.id}
-                  className="dashboard-course-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={openModule}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModule() } }}
-                >
-                  <span className={`dashboard-course-difficulty dashboard-course-difficulty--${course.difficultyClass}`}>
-                    {course.difficulty}
-                  </span>
-                  <div className={`dashboard-course-image dashboard-course-image--${course.image}`} />
-                  <h4>{course.title}</h4>
-                  <p>{course.description}</p>
-                  <div className="dashboard-course-meta">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 6v6l4 2" />
-                    </svg>
-                    <span>{course.duration}</span>
+              {COURSES.map((course) => {
+                const isDataStructures = course.id === 'data-structures'
+                return (
+                  <div
+                    key={course.id}
+                    className={`dashboard-course-card ${!isDataStructures ? 'dashboard-course-card--disabled' : ''}`}
+                    role="button"
+                    tabIndex={isDataStructures ? 0 : -1}
+                    onClick={() => isDataStructures && openModule(course)}
+                    onKeyDown={(e) => { if (isDataStructures && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openModule(course) } }}
+                  >
+                    <span className={`dashboard-course-difficulty dashboard-course-difficulty--${course.difficultyClass}`}>
+                      {course.difficulty}
+                    </span>
+                    <div className={`dashboard-course-image dashboard-course-image--${course.image}`} />
+                    <h4>{course.title}</h4>
+                    <p>{course.description}</p>
+                    <div className="dashboard-course-meta">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                      </svg>
+                      <span>{course.duration}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={`dashboard-btn-start ${!isDataStructures ? 'dashboard-btn-start--disabled' : ''}`}
+                      disabled={!isDataStructures}
+                      onClick={(e) => { e.stopPropagation(); if (isDataStructures) openModule(course) }}
+                    >
+                      Start
+                    </button>
                   </div>
-                  <button type="button" className="dashboard-btn-start" onClick={(e) => { e.stopPropagation(); openModule() }}>Start</button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         </main>
