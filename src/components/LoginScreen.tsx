@@ -9,15 +9,19 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    const user = login(email, password)
-    if (user) {
+    setLoading(true)
+    try {
+      await login(email, password, remember)
       navigate('/dashboard', { replace: true })
-    } else {
-      setError('Invalid email or password. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -72,7 +76,7 @@ export default function LoginScreen() {
           </div>
           <h1 className="login-welcome">Welcome back!</h1>
           <p className="login-subtitle">Please enter your details to sign in.</p>
-          <p className="login-demo-hint">Demo: alex@example.com / lumina2024</p>
+          <p className="login-demo-hint">Sign in with your LuminaAI account.</p>
 
           {error && (
             <div className="login-error" role="alert">
@@ -131,7 +135,9 @@ export default function LoginScreen() {
               />
               <span className="login-checkbox-label">Remember for 30 days</span>
             </label>
-            <button type="submit" className="login-btn-primary">Sign In</button>
+            <button type="submit" className="login-btn-primary" disabled={loading}>
+              {loading ? 'Signing in…' : 'Sign In'}
+            </button>
           </form>
 
           <div className="login-divider">

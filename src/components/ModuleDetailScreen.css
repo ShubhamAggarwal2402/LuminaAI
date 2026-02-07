@@ -1,0 +1,134 @@
+/* Module detail – full-page reading view */
+.module-detail-screen {
+  min-height: 100vh;
+  background: #1a1b23;
+  color: #e5e7eb;
+}
+
+.module-detail-header {
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #2d2e36;
+  background: #1e1f28;
+}
+
+.module-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+
+.module-detail-back:hover {
+  color: #3366ff;
+}
+
+.module-detail-back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.module-detail-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.module-detail-id {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.module-detail-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  line-height: 1.65;
+}
+
+/* Markdown content */
+.module-detail-content .module-md-h2 {
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  border-bottom: 1px solid #2d2e36;
+}
+
+.module-detail-content .module-md-h2:first-child {
+  margin-top: 0;
+}
+
+.module-detail-content .module-md-h3 {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.module-detail-content .module-md-p {
+  margin: 0 0 1rem;
+  color: #d1d5db;
+}
+
+.module-detail-content .module-md-ul,
+.module-detail-content .module-md-ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+  color: #d1d5db;
+}
+
+.module-detail-content .module-md-li {
+  margin-bottom: 0.35rem;
+}
+
+.module-detail-content .module-md-pre {
+  margin: 1rem 0;
+  padding: 1.25rem;
+  background: #111113;
+  border: 1px solid #2d2e36;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.module-detail-content .module-md-pre code {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  color: #e5e7eb;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.module-detail-content .module-md-code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  background: #25262e;
+  border-radius: 4px;
+  color: #fbbf24;
+}
+
+.module-detail-content .module-md-pre .module-md-code {
+  padding: 0;
+  background: none;
+  color: #e5e7eb;
+}
+
+.module-detail-content .module-md-strong {
+  font-weight: 700;
+  color: #f3f4f6;
+}
+
+.module-detail-content .module-md-em {
+  font-style: italic;
+  color: #d1d5db;
+}

@@ -22,9 +22,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 1.25rem 1.5rem;
+  padding: 0 1rem 1.5rem;
   border-bottom: 1px solid #2d2e36;
   margin-bottom: 1rem;
+  min-width: 0;
 }
 
 .dashboard-avatar {
@@ -46,13 +47,19 @@
 
 .dashboard-profile-info {
   text-align: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dashboard-profile-name {
   display: block;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin-bottom: 0.25rem;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 .dashboard-profile-badge {
@@ -100,51 +107,15 @@
   color: white;
 }
 
-.dashboard-tutor-cta {
+.dashboard-sidebar-footer {
   margin-top: auto;
-  padding: 1.25rem 1rem 0;
+  padding: 1.25rem 0.75rem 0;
   border-top: 1px solid #2d2e36;
 }
 
-.dashboard-tutor-cta-title {
-  margin: 0 0 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #9ca3af;
-}
-
-.dashboard-tutor-cta-desc {
-  margin: 0 0 1rem;
-  font-size: 0.85rem;
-  color: #d1d5db;
-  line-height: 1.4;
-}
-
-.dashboard-btn-tutor {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.7rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: white;
-  background: #3366ff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dashboard-btn-tutor:hover {
-  background: #2952cc;
-}
-
-.dashboard-btn-tutor svg {
-  width: 20px;
-  height: 20px;
+.dashboard-nav-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
 }
 
 /* Main body */
@@ -411,6 +382,7 @@
   display: flex;
   flex-direction: column;
   transition: border-color 0.2s;
+  cursor: pointer;
 }
 
 .dashboard-course-card:hover {
@@ -572,9 +544,7 @@
   .dashboard-sidebar-profile .dashboard-profile-info,
   .dashboard-sidebar-profile .dashboard-profile-name,
   .dashboard-sidebar-profile .dashboard-profile-badge,
-  .dashboard-nav-item span,
-  .dashboard-tutor-cta-desc,
-  .dashboard-tutor-cta-title {
+  .dashboard-nav-item span {
     display: none;
   }
 
@@ -590,14 +560,6 @@
   .dashboard-avatar svg {
     width: 22px;
     height: 22px;
-  }
-
-  .dashboard-btn-tutor span {
-    display: none;
-  }
-
-  .dashboard-btn-tutor {
-    padding: 0.7rem;
   }
 }
 

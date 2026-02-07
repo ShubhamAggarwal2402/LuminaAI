@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getStoredUser, logout } from '../auth'
+import { SAMPLE_MODULE } from '../data/sampleModule'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
   { id: 'courses', label: 'My Courses', icon: 'courses' },
   { id: 'achievements', label: 'Achievements', icon: 'trophy' },
-  { id: 'settings', label: 'Settings', icon: 'gear' },
 ] as const
 
 const TREND_POINTS = [40, 55, 45, 65, 58, 72] // Jan–Jun approximate values for SVG
@@ -36,12 +36,10 @@ export default function Dashboard() {
     navigate('/', { replace: true })
   }
 
-  const handleNav = (id: string) => {
-    if (id === 'settings') {
-      handleLogout()
-      return
-    }
-    setActiveNav(id)
+  const handleNav = (id: string) => setActiveNav(id)
+
+  const openModule = () => {
+    navigate(`/module/${SAMPLE_MODULE.module_id}`, { state: { module: SAMPLE_MODULE } })
   }
 
   if (!user) return null
@@ -72,7 +70,7 @@ export default function Dashboard() {
             </svg>
           </div>
           <div className="dashboard-profile-info">
-            <span className="dashboard-profile-name">{user.name}</span>
+            <span className="dashboard-profile-name">{user.name ?? user.email}</span>
             <span className="dashboard-profile-badge">Premium Learner</span>
           </div>
         </div>
@@ -111,28 +109,23 @@ export default function Dashboard() {
                   <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
                 </svg>
               )}
-              {item.icon === 'gear' && (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              )}
               <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="dashboard-tutor-cta">
-          <h3 className="dashboard-tutor-cta-title">STUCK ON A TOPIC?</h3>
-          <p className="dashboard-tutor-cta-desc">Get instant answers from your personal AI tutor.</p>
-          <button type="button" className="dashboard-btn-tutor">
+        <div className="dashboard-sidebar-footer">
+          <button
+            type="button"
+            className="dashboard-nav-item dashboard-nav-logout"
+            onClick={handleLogout}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5a3 3 0 1 0-5.998.235 4 4 0 0 1 2.103 3.415A3 3 0 0 0 9 14a3 3 0 0 0 3-3" />
-              <path d="M12 19v-4" />
-              <path d="M12 15h.01" />
-              <circle cx="12" cy="12" r="10" />
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" x2="9" y1="12" y2="12" />
             </svg>
-            AI Tutor Help
+            <span>Log out</span>
           </button>
         </div>
       </aside>
@@ -145,7 +138,7 @@ export default function Dashboard() {
         <main className="dashboard-main">
           <div className="dashboard-welcome-row">
             <div className="dashboard-welcome-text">
-              <h2>Welcome back, {user.name.split(' ')[0]}! 👋</h2>
+              <h2>Welcome back, {(user.name ?? user.email).split(' ')[0]}! 👋</h2>
               <p>You&apos;ve mastered <strong>3 new skills</strong> this week. Keep up the momentum!</p>
             </div>
             <div className="dashboard-streak-badge">
@@ -200,7 +193,7 @@ export default function Dashboard() {
                   <div className="dashboard-progress-fill" style={{ width: '65%' }} />
                 </div>
               </div>
-              <button type="button" className="dashboard-btn-resume">
+              <button type="button" className="dashboard-btn-resume" onClick={openModule}>
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z" />
                 </svg>
@@ -216,7 +209,14 @@ export default function Dashboard() {
             </div>
             <div className="dashboard-courses-grid">
               {COURSES.map((course) => (
-                <div key={course.id} className="dashboard-course-card">
+                <div
+                  key={course.id}
+                  className="dashboard-course-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={openModule}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModule() } }}
+                >
                   <span className={`dashboard-course-difficulty dashboard-course-difficulty--${course.difficultyClass}`}>
                     {course.difficulty}
                   </span>
@@ -230,7 +230,7 @@ export default function Dashboard() {
                     </svg>
                     <span>{course.duration}</span>
                   </div>
-                  <button type="button" className="dashboard-btn-start">Start</button>
+                  <button type="button" className="dashboard-btn-start" onClick={(e) => { e.stopPropagation(); openModule() }}>Start</button>
                 </div>
               ))}
             </div>

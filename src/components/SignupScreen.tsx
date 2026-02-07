@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { register } from '../auth'
 import './SignupScreen.css'
 
 const LEARNING_GOALS = [
@@ -32,21 +33,31 @@ function validateForm(data: SignupFormData): FormErrors {
 }
 
 export default function SignupScreen() {
+  const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [learningGoal, setLearningGoal] = useState('')
   const [errors, setErrors] = useState<FormErrors>({})
-  const [submitted, setSubmitted] = useState(false)
+  const [apiError, setApiError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setApiError('')
     const data: SignupFormData = { fullName, email, password, learningGoal }
     const nextErrors = validateForm(data)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
-    setSubmitted(true)
-    // TODO: call signup API, then redirect to dashboard or login
+    setLoading(true)
+    try {
+      await register(email, password)
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogle = () => {
@@ -125,14 +136,12 @@ export default function SignupScreen() {
           <h1 className="signup-title">Create Account</h1>
           <p className="signup-subtitle">Join the future of personalized learning.</p>
 
-          {submitted ? (
-            <div className="signup-success" role="alert">
-              <p>Account created successfully! Check your email to verify.</p>
-              <Link to="/" className="signup-link">Go to Sign In</Link>
+          {apiError && (
+            <div className="signup-error-banner" role="alert">
+              {apiError}
             </div>
-          ) : (
-            <>
-              <form onSubmit={handleSubmit} className="signup-form" noValidate>
+          )}
+          <form onSubmit={handleSubmit} className="signup-form" noValidate>
                 <label className="signup-label">
                   Full Name
                   <div className={`signup-input-wrap ${errors.fullName ? 'signup-input-wrap--error' : ''}`}>
@@ -218,8 +227,8 @@ export default function SignupScreen() {
                   </div>
                   {errors.learningGoal && <span className="signup-error">{errors.learningGoal}</span>}
                 </label>
-                <button type="submit" className="signup-btn-primary">
-                  Create Account
+                <button type="submit" className="signup-btn-primary" disabled={loading}>
+                  {loading ? 'Creating account…' : 'Create Account'}
                   <span className="signup-btn-arrow" aria-hidden>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                   </span>
@@ -250,8 +259,6 @@ export default function SignupScreen() {
               <p className="signup-login">
                 Already have an account? <Link to="/" className="signup-link">Log in</Link>
               </p>
-            </>
-          )}
         </div>
       </div>
     </div>

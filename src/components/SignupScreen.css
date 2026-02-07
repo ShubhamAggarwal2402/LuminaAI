@@ -287,6 +287,20 @@
   color: #ef4444;
 }
 
+.signup-error-banner {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #fef2f2;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.signup-error-banner:empty {
+  display: none;
+}
+
 .signup-btn-primary {
   width: 100%;
   display: flex;
