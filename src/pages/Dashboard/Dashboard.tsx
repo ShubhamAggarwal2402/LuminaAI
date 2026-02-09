@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/', { replace: true })
+      navigate('/login', { replace: true })
       return
     }
   }, [user, navigate])
@@ -35,7 +35,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     logout()
     setUser(null)
-    navigate('/', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   const handleNav = (id: string) => setActiveNav(id)
