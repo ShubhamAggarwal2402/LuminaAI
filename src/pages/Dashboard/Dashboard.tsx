@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { getStoredUser, logout } from '../auth'
-import { SAMPLE_MODULE } from '../data/sampleModule'
-import { DATA_STRUCTURES_OUTLINE } from '../data/courseOutline'
+import { getStoredUser, logout } from '../../auth'
+import { SAMPLE_MODULE } from '../../data/sampleModule'
+import { DATA_STRUCTURES_OUTLINE } from '../../data/courseOutline'
 import './Dashboard.css'
 
 const NAV_ITEMS = [
@@ -55,20 +55,22 @@ export default function Dashboard() {
 
   if (!user) return null
 
-  const minY = Math.min(...TREND_POINTS)
-  const maxY = Math.max(...TREND_POINTS)
-  const range = maxY - minY || 1
   const width = 280
   const height = 120
   const padding = { top: 8, right: 8, bottom: 24, left: 8 }
   const chartWidth = width - padding.left - padding.right
   const chartHeight = height - padding.top - padding.bottom
-  const points = TREND_POINTS.map((v, i) => {
-    const x = padding.left + (i / (TREND_POINTS.length - 1)) * chartWidth
-    const y = padding.top + chartHeight - ((v - minY) / range) * chartHeight
-    return `${x},${y}`
-  }).join(' ')
-
+  const minY = Math.min(...TREND_POINTS)
+  const maxY = Math.max(...TREND_POINTS)
+  const range = maxY - minY || 1
+  const getTrendPoints = (): string =>
+    TREND_POINTS.map((v, i) => {
+      const x = padding.left + (i / (TREND_POINTS.length - 1)) * chartWidth
+      const y = padding.top + chartHeight - ((v - minY) / range) * chartHeight
+      return `${x},${y}`
+    }).join(' ')
+  const trendPointsStr = getTrendPoints()
+  void trendPointsStr
   return (
     <div className="student-dashboard">
       <aside className="dashboard-sidebar">
@@ -152,72 +154,15 @@ export default function Dashboard() {
               <h2>Welcome back, {(user.name ?? user.email).split(' ')[0]}! 👋</h2>
               <p>You&apos;ve mastered <strong>3 new skills</strong> this week. Keep up the momentum!</p>
             </div>
-            <div className="dashboard-streak-badge">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 23c-1.1 0-2-.9-2-2h4c0 1.1-.9 2-2 2zm6-4v-2c0-1.5-.8-2.8-2-3.5V13c0-2.8-2.2-5-5-5s-5 2.2-5 5v.5C4.8 19.2 4 20.5 4 22v2h16z" />
-              </svg>
-              <span>STREAK 12 Days</span>
-            </div>
           </div>
 
-          <div className="dashboard-cards-row">
-            <div className="dashboard-card dashboard-card--trend">
-              <div className="dashboard-card-trend-header">
-                <div>
-                  <h3>Knowledge Trend</h3>
-                  <p>Weekly score improvement over 6 months</p>
-                </div>
-                <div className="dashboard-card-trend-stats">
-                  <span className="dashboard-trend-value">84%</span>
-                  <span className="dashboard-trend-delta">+12%</span>
-                </div>
-              </div>
-              <div className="dashboard-trend-chart">
-                <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-                  <polyline
-                    fill="none"
-                    stroke="#3366ff"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={points}
-                  />
-                </svg>
-              </div>
-              <div className="dashboard-trend-labels">
-                <span>JAN</span>
-                <span>FEB</span>
-                <span>MAR</span>
-                <span>APR</span>
-                <span>MAY</span>
-                <span>JUN</span>
-              </div>
-            </div>
 
-            <div className="dashboard-card dashboard-card--continue">
-              <h3>Continue Learning</h3>
-              <p className="dashboard-continue-course">Advanced Python</p>
-              <p className="dashboard-continue-next">Next: Decorators and Generators deep dive.</p>
-              <div className="dashboard-continue-progress">
-                <span>Module 4 of 12</span>
-                <div className="dashboard-progress-bar">
-                  <div className="dashboard-progress-fill" style={{ width: '65%' }} />
-                </div>
-              </div>
-              <button type="button" className="dashboard-btn-resume" onClick={() => openModule()}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Resume Course
-              </button>
-            </div>
-          </div>
 
           <section className="dashboard-courses">
-            <div className="dashboard-courses-header">
+            {/* <div className="dashboard-courses-header">
               <h3>Available Courses</h3>
               <button type="button" className="dashboard-link">View All Library</button>
-            </div>
+            </div> */}
             <div className="dashboard-courses-grid">
               {COURSES.map((course) => {
                 const isDataStructures = course.id === 'data-structures'

@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
-import type { ModuleData } from '../data/sampleModule'
-import { SAMPLE_MODULE } from '../data/sampleModule'
-import type { CourseOutline } from '../data/courseOutline'
-import { getStoredUser } from '../auth'
-import { fetchModuleContent } from '../api'
+import type { ModuleData } from '../../data/sampleModule'
+import { SAMPLE_MODULE } from '../../data/sampleModule'
+import type { CourseOutline } from '../../data/courseOutline'
+import { getStoredUser } from '../../auth'
+import { fetchModuleContent, markModuleComplete, sendConversationMessage } from '@/api'
+import ModuleQuiz from '../../components/ModuleQuiz'
 import './ModuleDetailScreen.css'
 
 export type { ModuleData }
@@ -79,14 +80,64 @@ export default function ModuleDetailScreen() {
     })
     return init
   })
-  const [quizAnswer, setQuizAnswer] = useState<string>('')
   const [chatInput, setChatInput] = useState('')
   const [chatDialogOpen, setChatDialogOpen] = useState(false)
-  const [chatMessages] = useState([
-    { role: 'ai' as const, text: 'I\'m your AI tutor for this module. Do you have any questions about the dependency array or how the algorithms work?', time: '10:24 AM' },
-    { role: 'user' as const, text: 'Can you explain what happens if I don\'t provide a dependency array at all?', time: '10:25 AM' },
-    { role: 'ai' as const, text: 'If you omit the dependency array, the effect runs after every render. That can be useful for syncing with external systems, but often you\'ll want to pass an empty array [] to run only on mount.', time: '10:25 AM' },
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
+  const [moduleCompleted, setModuleCompleted] = useState(false)
+  const [markCompleteLoading, setMarkCompleteLoading] = useState(false)
+  const [markCompleteError, setMarkCompleteError] = useState<string | null>(null)
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'ai' | 'user'; text: string; time: string; followUpQuestions?: string[] }>>([
+    { role: 'ai', text: "I'm your AI tutor for this module. Ask me anything about the content.", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
   ])
+
+  const formatTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  const handleSendChat = useCallback(async (questionOverride?: string) => {
+    const question = (questionOverride ?? chatInput).trim()
+    if (!question || chatLoading || !user?.id) return
+    const moduleContextId = displayModule.module_id ?? moduleId ?? ''
+    setChatError(null)
+    setChatMessages((prev) => [...prev, { role: 'user', text: question, time: formatTime() }])
+    if (!questionOverride) setChatInput('')
+    setChatLoading(true)
+    const payload = {
+      user_id: user.id,
+      module_context_id: moduleContextId,
+      user_question: question,
+      context_question: '',
+    }
+    console.log('Conversation payload:', payload)
+    try {
+      const data = await sendConversationMessage(payload)
+      console.log('Conversation response:', data)
+      const responseText = (data.response ?? '').trim()
+      const looksLikeError = /429|RESOURCE_EXHAUSTED|quota exceeded|"error":\s*\{/i.test(responseText) || responseText.length > 500
+      if (looksLikeError) {
+        setChatError('The AI is busy or something went wrong. Please try again in a moment.')
+        setChatMessages((prev) => [...prev, { role: 'ai', text: 'Sorry, I couldn\'t process that. Please try again.', time: formatTime() }])
+      } else {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: 'ai',
+            text: responseText || 'No response.',
+            time: formatTime(),
+            followUpQuestions: data.follow_up_questions && data.follow_up_questions.length > 0 ? data.follow_up_questions : undefined,
+          },
+        ])
+      }
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : 'Failed to get a response.'
+      const friendly = raw.length > 120 || /RESOURCE_EXHAUSTED|quota|rate.limit|429/i.test(raw)
+        ? 'The AI is busy or something went wrong. Please try again in a moment.'
+        : raw
+      setChatError(friendly)
+      setChatMessages((prev) => [...prev, { role: 'ai', text: 'Sorry, I couldn\'t process that. Please try again.', time: formatTime() }])
+    } finally {
+      setChatLoading(false)
+    }
+  }, [chatInput, chatLoading, user?.id, displayModule.module_id, moduleId])
 
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -136,7 +187,7 @@ export default function ModuleDetailScreen() {
               <path d="M8 7h8" />
               <path d="M8 11h8" />
             </svg>
-            <span>LuminaAI</span>
+            <span>IntelliGrad</span>
           </Link>
           
         </div>
@@ -205,7 +256,7 @@ export default function ModuleDetailScreen() {
         {/* Center – module content */}
         <main className="module-main">
           <nav className="module-breadcrumb">
-            <Link to="/dashboard">LuminaAI</Link>
+            <Link to="/dashboard">IntelliGrad</Link>
             <span className="module-breadcrumb-sep">/</span>
             <span>{courseName.toUpperCase()}</span>
             <span className="module-breadcrumb-sep">/</span>
@@ -257,35 +308,43 @@ export default function ModuleDetailScreen() {
                   {displayModule.content_md}
                 </ReactMarkdown>
               </article>
+              <div className="module-mark-complete-wrap">
+                {markCompleteError && (
+                  <p className="module-mark-complete-error" role="alert">{markCompleteError}</p>
+                )}
+                <button
+                  type="button"
+                  className="module-btn-mark-complete"
+                  disabled={markCompleteLoading || moduleCompleted}
+                  onClick={async () => {
+                    const idToComplete = displayModule.module_id ?? moduleId ?? ''
+                    if (!idToComplete) return
+                    setMarkCompleteError(null)
+                    setMarkCompleteLoading(true)
+                    try {
+                      await markModuleComplete(idToComplete)
+                      setModuleCompleted(true)
+                    } catch (err) {
+                      setMarkCompleteError(err instanceof Error ? err.message : 'Failed to mark module complete.')
+                    } finally {
+                      setMarkCompleteLoading(false)
+                    }
+                  }}
+                >
+                  {markCompleteLoading ? 'Marking…' : moduleCompleted ? 'Completed' : 'Mark as complete'}
+                </button>
+              </div>
             </>
           )}
         </main>
 
         {/* Right sidebar – quiz + chat */}
         <aside className="module-sidebar-right">
-          <section className="module-quiz-card">
-            <h3 className="module-quiz-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-              </svg>
-              AI Quick Quiz
-            </h3>
-            <p className="module-quiz-question">When does the effect run if the dependency array is empty <code>[]</code>?</p>
-            <div className="module-quiz-options">
-              {['After every render', 'Only after the initial render (mount)', 'Whenever props change'].map((opt, i) => (
-                <label key={i} className="module-quiz-option">
-                  <input
-                    type="radio"
-                    name="quiz"
-                    checked={quizAnswer === opt}
-                    onChange={() => setQuizAnswer(opt)}
-                  />
-                  <span>{opt}</span>
-                </label>
-              ))}
-            </div>
-            <button type="button" className="module-quiz-submit">Submit Answer</button>
-          </section>
+          <ModuleQuiz
+            moduleId={displayModule.module_id ?? moduleId ?? ''}
+            userId={user?.id ?? 0}
+            isLocked={!moduleCompleted}
+          />
 
           <section className="module-chat-card">
             <h3 className="module-chat-title">
@@ -317,19 +376,44 @@ export default function ModuleDetailScreen() {
                 <div key={i} className={`module-chat-msg module-chat-msg--${msg.role}`}>
                   <span className="module-chat-msg-label">{msg.role === 'ai' ? 'AI Tutor' : 'You'}</span>
                   <p>{msg.text}</p>
+                  {msg.role === 'ai' && msg.followUpQuestions && msg.followUpQuestions.length > 0 && (
+                    <div className="module-chat-follow-ups">
+                      <span className="module-chat-follow-ups-label">Suggested questions:</span>
+                      {msg.followUpQuestions.map((q, j) => (
+                        <button
+                          key={j}
+                          type="button"
+                          className="module-chat-follow-up-btn"
+                          onClick={() => handleSendChat(q)}
+                          disabled={chatLoading}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <span className="module-chat-msg-time">{msg.time}</span>
                 </div>
               ))}
+              {chatLoading && (
+                <div className="module-chat-msg module-chat-msg--ai">
+                  <span className="module-chat-msg-label">AI Tutor</span>
+                  <p className="module-chat-typing"><span className="module-chat-typing-text">Typing</span><span className="module-chat-typing-dots"><span>.</span><span>.</span><span>.</span></span></p>
+                </div>
+              )}
             </div>
+            {chatError && <p className="module-chat-error" role="alert">{chatError}</p>}
             <div className="module-chat-input-wrap">
               <input
                 type="text"
                 placeholder="Ask a doubt..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSendChat() } }}
                 className="module-chat-input"
+                disabled={chatLoading}
               />
-              <button type="button" className="module-chat-send" aria-label="Send">
+              <button type="button" className="module-chat-send" aria-label="Send" onClick={() => handleSendChat()} disabled={chatLoading}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 2L11 13" />
                   <path d="M22 2 15 22 11 13 2 9 22 2z" />
@@ -383,19 +467,44 @@ export default function ModuleDetailScreen() {
                   <div key={i} className={`module-chat-msg module-chat-msg--${msg.role} module-chat-dialog-msg`}>
                     <span className="module-chat-msg-label">{msg.role === 'ai' ? 'AI Tutor' : 'You'}</span>
                     <p>{msg.text}</p>
+                    {msg.role === 'ai' && msg.followUpQuestions && msg.followUpQuestions.length > 0 && (
+                      <div className="module-chat-follow-ups">
+                        <span className="module-chat-follow-ups-label">Suggested questions:</span>
+                        {msg.followUpQuestions.map((q, j) => (
+                          <button
+                            key={j}
+                            type="button"
+                            className="module-chat-follow-up-btn"
+                            onClick={() => handleSendChat(q)}
+                            disabled={chatLoading}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <span className="module-chat-msg-time">{msg.time}</span>
                   </div>
                 ))}
+                {chatLoading && (
+                  <div className="module-chat-msg module-chat-msg--ai module-chat-dialog-msg">
+                    <span className="module-chat-msg-label">AI Tutor</span>
+                    <p className="module-chat-typing"><span className="module-chat-typing-text">Typing</span><span className="module-chat-typing-dots"><span>.</span><span>.</span><span>.</span></span></p>
+                  </div>
+                )}
               </div>
+              {chatError && <p className="module-chat-error" role="alert">{chatError}</p>}
               <div className="module-chat-input-wrap module-chat-dialog-input-wrap">
                 <input
                   type="text"
                   placeholder="Ask a doubt..."
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSendChat() } }}
                   className="module-chat-input"
+                  disabled={chatLoading}
                 />
-                <button type="button" className="module-chat-send" aria-label="Send">
+                <button type="button" className="module-chat-send" aria-label="Send" onClick={() => handleSendChat()} disabled={chatLoading}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 2L11 13" />
                     <path d="M22 2 15 22 11 13 2 9 22 2z" />

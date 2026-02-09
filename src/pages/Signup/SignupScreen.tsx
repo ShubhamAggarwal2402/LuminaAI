@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { register } from '../auth'
+import { register } from '../../auth'
 import './SignupScreen.css'
 
 const LEARNING_GOALS = [
